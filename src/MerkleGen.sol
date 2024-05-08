@@ -141,10 +141,59 @@ contract MerkleGen {
 
     }
 
-    function gen(bytes32[] memory hashed_leaves, uint256[] memory selected_indexes) public view {
+    function gen(bytes32[] memory hashed_leaves, uint256[] memory selected_indexes) public view returns (bytes32[] memory, bool[] memory, bytes32){
+        bytes32[] memory layer = hashed_leaves.copy();
         // Create two dimensional array
-        bytes32[][] memory layers = new bytes32[][](hashed_leaves.length);
-        
+        bytes32[][] memory layers = new bytes32[][](1);
+        layers[0] = layer;
+        bytes32[] memory next_layer;
+        while (layer.length > 1) {
+            next_layer = compute_next_layer(layer);
+            layers = layers.append(next_layer);
+            layer = next_layer;
+        }
+
+        bytes32[] memory proof_hashes;
+        bool[] memory proof_source_flags;
+        uint256[] memory indices = selected_indexes.copy();
+
+        uint256 last_index = layers.length - 1;
+        bytes32[] memory subproof;
+        bool[] memory source_flags;
+        for (uint256 i = 0; i < layers[last_index].length - 1; i++) {
+            (indices, subproof, source_flags) = prove_single_layer(layers[layers.length - 1 - i], indices);
+            proof_hashes = proof_hashes.extend(subproof);
+            proof_source_flags = proof_source_flags.extend(source_flags);
+        }
+
+        // Get leaves in hashed_leaves that are in selected_indexes
+        bytes32[] memory indexed_leaves = new bytes32[](selected_indexes.length);
+        for (uint256 i = 0; i < selected_indexes.length; i++) {
+            indexed_leaves[i] = hashed_leaves[selected_indexes[i]];
+        }
+
+        bytes32 root = verify_compute_root(indexed_leaves, proof_hashes, proof_source_flags);
+
+        // Check if computed root is the same as the root of the tree
+        require(root == layers[layers.length-1][0], "Invalid root");
+
+        // Convert proof_source_flags to bits and uint256
+        uint256 proof_flag_bits = 0;
+        bool[] memory proof_flag_bits_bool = new bool[](proof_source_flags.length);
+        for (uint256 i = 0; i < proof_source_flags.length; i++) {
+            if (proof_source_flags[i] == SOURCE_FROM_HASHES) {
+                proof_flag_bits_bool[i] = true;
+                proof_flag_bits = proof_flag_bits | (1 << i);
+                
+            }
+            else {
+                proof_flag_bits_bool[i] = false;
+                proof_flag_bits = proof_flag_bits | (0 << i);
+            }
+        }
+
+        return (proof_hashes, proof_flag_bits_bool, root);
+
     }
 
 

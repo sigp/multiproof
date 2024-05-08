@@ -67,6 +67,14 @@ library ArrayLib {
         return newArr;
     }
 
+    function copy(uint256[] memory arr) public pure returns (uint256[] memory) {
+        uint256[] memory newArr = new uint256[](arr.length);
+        for (uint256 i = 0; i < arr.length; i++) {
+            newArr[i] = arr[i];
+        }
+        return newArr;
+    }
+
     // Bool array operations
 
     function append(bool[] memory arr, bool val) public pure returns (bool[] memory) {
