@@ -5,7 +5,8 @@ import {MerkleProof} from '@openzeppelin/contracts/utils/cryptography/MerkleProo
 
 contract Prover {
 
-    function proof() public {
-        
+    function prove(bytes32[] calldata proof, bool[] calldata proofFlags, bytes32 root, bytes32[] calldata leaves) public pure returns(bool) {
+
+        return MerkleProof.multiProofVerifyCalldata(proof, proofFlags, root, leaves);
     }
 }
