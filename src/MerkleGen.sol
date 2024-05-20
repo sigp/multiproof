@@ -160,7 +160,7 @@ contract MerkleGen {
         //uint256 last_index = layers.length - 1;
         bytes32[] memory subproof;
         bool[] memory source_flags;
-        for (uint256 i = 0; i < layers.length - 1; i++) { // Exclude the last layer
+        for (uint256 i = 0; i < layers.length - 1; i++) { // Exclude the last layer because it is the root
             layer = layers[i];
             (indices, subproof, source_flags) = prove_single_layer(layer, indices);
             proof_hashes = proof_hashes.extend(subproof);
@@ -196,6 +196,5 @@ contract MerkleGen {
         return (proof_hashes, proof_flag_bits_bool, root);
 
     }
-
 
 }
