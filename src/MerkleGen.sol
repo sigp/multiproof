@@ -157,11 +157,12 @@ contract MerkleGen {
         bool[] memory proof_source_flags;
         uint256[] memory indices = selected_indexes.copy();
 
-        uint256 last_index = layers.length - 1;
+        //uint256 last_index = layers.length - 1;
         bytes32[] memory subproof;
         bool[] memory source_flags;
-        for (uint256 i = 0; i < layers[last_index].length - 1; i++) {
-            (indices, subproof, source_flags) = prove_single_layer(layers[layers.length - 1 - i], indices);
+        for (uint256 i = 0; i < layers.length - 1; i++) { // Exclude the last layer
+            layer = layers[i];
+            (indices, subproof, source_flags) = prove_single_layer(layer, indices);
             proof_hashes = proof_hashes.extend(subproof);
             proof_source_flags = proof_source_flags.extend(source_flags);
         }
