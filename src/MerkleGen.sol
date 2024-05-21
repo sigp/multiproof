@@ -7,7 +7,6 @@ contract MerkleGen {
 
     using ArrayLib for *;
 
-    bytes32 ZERO_HASH = bytes32(0);
     bool SOURCE_FROM_HASHES = true;
     bool SOURCE_FROM_PROOF = false;
 
@@ -20,13 +19,14 @@ contract MerkleGen {
         }
     }
 
-    function compute_next_layer(bytes32[] memory layer) internal view returns (bytes32[] memory) {
+    function compute_next_layer(bytes32[] memory layer) internal pure returns (bytes32[] memory) {
         if (layer.length == 1) {
             return layer;
         } 
 
         if (layer.length % 2 == 1) {
-            layer = layer.append(ZERO_HASH);
+            // Append with the same leaf if odd number of leaves
+            layer = layer.append(layer[layer.length - 1]);
         }
 
         bytes32[] memory next_layer;
@@ -67,7 +67,12 @@ contract MerkleGen {
 
         bytes32[] memory subProof = new bytes32[](auth_indices.length);
         for (uint256 i = 0; i < auth_indices.length; i++) {
-            subProof[i] = layer[auth_indices[i]];
+            // Here, if the index is out of bounds, we use the last element of the layer
+            if (layer.length - 1 < auth_indices[i]) {
+                subProof[i] = layer[auth_indices[i]-1];
+            } else {
+                subProof[i] = layer[auth_indices[i]];
+            }
         }
 
         return (next_indices, subProof, source_flags);
@@ -90,8 +95,8 @@ contract MerkleGen {
 
         bytes32[] memory hashes = new bytes32[](total_hashes);
         // Fill hashes with leaves[0]
-        for (uint256 i = 0; i < leaves.length; i++) {
-            hashes[i] = leaves[i];
+        for (uint256 i = 0; i < total_hashes; i++) {
+            hashes[i] = leaves[0];
         }
         // Variables
         uint256 leaf_pos = 0;
@@ -143,6 +148,10 @@ contract MerkleGen {
 
     function gen(bytes32[] memory hashed_leaves, uint256[] memory selected_indexes) public view returns (bytes32[] memory, bool[] memory, bytes32){
         bytes32[] memory layer = hashed_leaves.copy();
+        // If odd number of leaves, append with the same leaf
+        if (layer.length % 2 == 1) {
+            layer = layer.append(layer[layer.length - 1]);
+        }
         // Create two dimensional array
         bytes32[][] memory layers = new bytes32[][](1);
         layers[0] = layer;
@@ -157,10 +166,9 @@ contract MerkleGen {
         bool[] memory proof_source_flags;
         uint256[] memory indices = selected_indexes.copy();
 
-        //uint256 last_index = layers.length - 1;
         bytes32[] memory subproof;
         bool[] memory source_flags;
-        for (uint256 i = 0; i < (layers.length - 1); i++) { // Exclude the last layer because it is the root
+        for (uint256 i = 0; i < layers.length - 1; i++) { // Exclude the last layer because it is the root
             layer = layers[i];
             (indices, subproof, source_flags) = prove_single_layer(layer, indices);
             proof_hashes = proof_hashes.extend(subproof);
