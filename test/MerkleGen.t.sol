@@ -2,7 +2,6 @@
 pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
-import {Counter} from "../src/Counter.sol";
 import {MerkleGen} from "../src/MerkleGen.sol";
 import {Prover} from "../src/Prover.sol";
 
@@ -24,35 +23,6 @@ contract MerkleGenTest is Test {
         leaves[1] = keccak256(abi.encodePacked(uint256(1)));
         leaves[2] = keccak256(abi.encodePacked(uint256(2)));
         leaves[3] = keccak256(abi.encodePacked(uint256(3)));
-
-        // compute H01
-        bytes32 h01;
-        if (leaves[0] < leaves[1]) {
-            h01 = keccak256(abi.encodePacked(leaves[0], leaves[1]));
-        }
-        else {
-            h01 = keccak256(abi.encodePacked(leaves[1], leaves[0]));
-        }
-        emit log_named_bytes32("h01", h01);
-        // compute H23
-        bytes32 h23;
-        if (leaves[2] < leaves[3]) {
-            h23 = keccak256(abi.encodePacked(leaves[2], leaves[3]));
-        }
-        else {
-            h23 = keccak256(abi.encodePacked(leaves[3], leaves[2]));
-        }
-        emit log_named_bytes32("h23", h23);
-        // compute H0123
-        bytes32 h0123;
-        if (h01 < h23) {
-            h0123 = keccak256(abi.encodePacked(h01, h23));
-        }
-        else {
-            h0123 = keccak256(abi.encodePacked(h23, h01));
-        }
-
-        emit log_named_bytes32("h0123", h0123);
 
         // Generate selected indexes
         uint256[] memory indices = new uint256[](4);
@@ -77,19 +47,13 @@ contract MerkleGenTest is Test {
     }
 
     /// @notice A fuzz test for the Merkle tree
-    function testFuzz_prove(uint256 seed, bool[] memory select_leaves_, uint256 numLeaves) public {
+    function testFuzz_prove(uint256 seed, bool[] memory select_leaves_, uint256 numLeaves) public view {
         //uint256 numLeaves = 5;
         // Assume
         numLeaves = bound(numLeaves, 1, 10000);
         vm.assume(select_leaves_.length >= numLeaves);
         // Seed for generating leaves
         seed = bound(seed, 1 ether, 1000 ether);
-
-        /*select_leaves_ = new bool[](numLeaves);
-        select_leaves_[0] = true;
-        select_leaves_[1] = true;
-        select_leaves_[2] = true;
-        select_leaves_[3] = true;*/
 
         // Count the number of selected leaves
         uint256 numIndexes = 0;
