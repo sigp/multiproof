@@ -1,3 +1,11 @@
+/*
+A contract for Generating Merkle MultiProof.
+
+Contributors:
+- sonicskye
+
+*/
+
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 

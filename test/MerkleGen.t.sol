@@ -1,3 +1,11 @@
+/*
+Testing for MerkleGen.sol.
+
+Contributors:
+- sonicskye
+
+*/
+
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 

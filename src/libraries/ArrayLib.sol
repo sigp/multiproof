@@ -1,3 +1,11 @@
+/*
+A library for handling array operations needed by MerkleGen contract.
+
+Contributors:
+- sonicskye
+
+*/
+
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 

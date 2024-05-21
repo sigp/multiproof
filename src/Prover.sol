@@ -1,4 +1,12 @@
-// SPDX-License-Identifier: UNLICENSED
+/*
+A contract for wrapping prover.
+
+Contributors:
+- sonicskye
+
+*/
+
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
 import {MerkleProof} from '@openzeppelin/contracts/utils/cryptography/MerkleProof.sol';
