@@ -54,7 +54,7 @@ contract MerkleGen {
             uint256 x = indices[j];
             next_indices = next_indices.append(parent_index(x));
 
-            if ( ((j + 1) < indices.length) && indices[j + 1] == sibling_index(x) ) {
+            if ( ((j + 1) < indices.length) && (indices[j + 1] == sibling_index(x)) ) {
                 j += 1;
                 source_flags = source_flags.append(SOURCE_FROM_HASHES);
             }
@@ -160,7 +160,7 @@ contract MerkleGen {
         //uint256 last_index = layers.length - 1;
         bytes32[] memory subproof;
         bool[] memory source_flags;
-        for (uint256 i = 0; i < layers.length - 1; i++) { // Exclude the last layer because it is the root
+        for (uint256 i = 0; i < (layers.length - 1); i++) { // Exclude the last layer because it is the root
             layer = layers[i];
             (indices, subproof, source_flags) = prove_single_layer(layer, indices);
             proof_hashes = proof_hashes.extend(subproof);
