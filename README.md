@@ -21,4 +21,3 @@ forge test
 ## License
 
 MIT
-```
