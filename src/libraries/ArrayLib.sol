@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 /**
- * @dev Library for array operations.
+ * @notice Library for array operations.
  * @author sonicskye.
  */
 library ArrayLib {

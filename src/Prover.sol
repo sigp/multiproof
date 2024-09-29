@@ -4,12 +4,12 @@ pragma solidity ^0.8.0;
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 /**
- * @dev Wrapper library for proving Merkle MultiProofs.
+ * @notice Wrapper library for proving Merkle MultiProofs.
  * @author sonicskye.
  */
 library Prover {
     /**
-     * @notice Verifies the validity of a Merkle multiproof.
+     * @notice Verifies the validity of a Merkle MultiProof.
      * @dev Uses OpenZeppelin's `multiProofVerifyCalldata` to validate a multiproof.
      * @param proof The array of sibling hashes that help prove the inclusion of the leaves.
      * @param flag A boolean array that indicates whether each node is from the proof or hashes.

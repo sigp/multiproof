@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {ArrayLib} from "./libraries/ArrayLib.sol";
 
 /**
- * @dev Library for generating Merkle MultiProofs.
+ * @notice Library for generating Merkle MultiProofs.
  * @author sonicskye.
  */
 library MerkleGen {
