@@ -1,29 +1,16 @@
-/*
-Testing for MerkleGen.sol.
-
-Contributors:
-- sonicskye
-
-*/
-
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.0;
 
 import {Test, console} from "forge-std/Test.sol";
 import {MerkleGen} from "../src/MerkleGen.sol";
 import {Prover} from "../src/Prover.sol";
 
+/**
+ * @dev Tests for MerkleGen.sol.
+ * @author sonicskye.
+ */
 contract MerkleGenTest is Test {
-
-    MerkleGen public merkleGen;
-    Prover public prover;
-
-    function setUp() public {
-        merkleGen = new MerkleGen();
-        prover = new Prover();
-    }
-
-    /// @notice A standard 4-leaf Merkle tree with all known values
+    /// @dev A test for standard 4-leaf Merkle tree with all known values.
     function test_prove() public {
         // Generate an array of bytes32 leaves
         bytes32[] memory leaves = new bytes32[](4);
@@ -45,17 +32,16 @@ contract MerkleGenTest is Test {
         }
 
         // Generate the proof
-        (bytes32[] memory proof, bool[] memory proofFlagBits, bytes32 root) = merkleGen.gen(leaves, indices);
+        (bytes32[] memory proof, bool[] memory proofFlagBits, bytes32 root) = MerkleGen.gen(leaves, indices);
 
         emit log_named_bytes32("root", root);
 
         // Verify the proof
-        assertTrue(prover.prove(proof, proofFlagBits, root, leaf_indexes));
-        
+        assertTrue(Prover.prove(proof, proofFlagBits, root, leaf_indexes));
     }
 
-    /// @notice A fuzz test for the Merkle tree
-    function testFuzz_prove(uint256 seed, bool[] memory select_leaves_, uint256 numLeaves) public view {
+    /// @dev A fuzz test for the Merkle tree.
+    function testFuzz_prove(uint256 seed, bool[] memory select_leaves_, uint256 numLeaves) public pure {
         //uint256 numLeaves = 5;
         // Assume
         numLeaves = bound(numLeaves, 1, 10000);
@@ -92,12 +78,9 @@ contract MerkleGenTest is Test {
         }
 
         // Generate the proof
-        (bytes32[] memory proof, bool[] memory proofFlagBits, bytes32 root) = merkleGen.gen(leaves, indices);
+        (bytes32[] memory proof, bool[] memory proofFlagBits, bytes32 root) = MerkleGen.gen(leaves, indices);
 
         // Verify the proof
-        assertTrue(prover.prove(proof, proofFlagBits, root, leaf_indexes));
+        assertTrue(Prover.prove(proof, proofFlagBits, root, leaf_indexes));
     }
-
-
-
 }
