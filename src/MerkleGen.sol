@@ -31,7 +31,7 @@ library MerkleGen {
      * @notice Computes the next layer in the Merkle tree from the current layer.
      * @dev If the current layer has an odd number of nodes, the last node is duplicated.
      * @param layer Current layer of the Merkle tree.
-     * @return Computed parent layer.
+     * @return Computed next layer.
      */
     function compute_next_layer(bytes32[] memory layer) internal pure returns (bytes32[] memory) {
         if (layer.length == 1) {
@@ -43,13 +43,13 @@ library MerkleGen {
             layer = layer.append(layer[layer.length - 1]);
         }
 
-        bytes32[] memory parent_layer;
+        bytes32[] memory next_layer;
 
         for (uint256 i = 0; i < layer.length; i += 2) {
-            parent_layer = parent_layer.append(hash_internal_nodes(layer[i], layer[i + 1]));
+            next_layer = next_layer.append(hash_internal_nodes(layer[i], layer[i + 1]));
         }
 
-        return parent_layer;
+        return next_layer;
     }
 
     /**
