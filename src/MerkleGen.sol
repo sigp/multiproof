@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import {ArrayLib} from "./libraries/ArrayLib.sol";
-import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 /**
  * @notice Library for generating Merkle MultiProofs.
@@ -10,7 +9,6 @@ import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
  */
 library MerkleGen {
     using ArrayLib for *;
-    using Math for uint256;
 
     bool private constant SOURCE_FROM_HASHES = true;
     bool private constant SOURCE_FROM_PROOF = false;
