@@ -83,4 +83,47 @@ contract MerkleGenTest is Test {
         // Verify the proof
         assertTrue(Prover.prove(proof, proofFlagBits, root, leaf_indexes));
     }
+
+    /// @dev A test for standard 4-leaf Merkle tree with all known values.
+    function test_single_proof_prove() public {
+        // Generate an array of bytes32 leaves
+        bytes32[] memory leaves = new bytes32[](4);
+        leaves[0] = keccak256(abi.encodePacked(uint256(0)));
+        leaves[1] = keccak256(abi.encodePacked(uint256(1)));
+        leaves[2] = keccak256(abi.encodePacked(uint256(2)));
+        leaves[3] = keccak256(abi.encodePacked(uint256(3)));
+
+        // Generate the proof and root
+        (bytes32[] memory proof, bytes32 root) = MerkleGen.gen(leaves, 1);
+
+        emit log_named_bytes32("root", root);
+
+        // Verify the proof
+        assertTrue(Prover.prove(proof, root, leaves[1]));
+    }
+
+    /// @dev A fuzz test for the SingleProofs for Merkle tree.
+    function testFuzz_single_proof_prove(uint256 seed, uint256 numLeaves, uint256 randomLeafIndex) public {
+        // Assume total number of leaves
+        numLeaves = bound(numLeaves, 2, 10000);
+
+        // Seed for generating leaves
+        seed = bound(seed, 1 ether, 1000 ether);
+
+        randomLeafIndex = bound(randomLeafIndex, 0, numLeaves - 1);
+
+        // Generate an array of bytes32 leaves
+        bytes32[] memory leaves = new bytes32[](numLeaves);
+        for (uint256 i = 0; i < numLeaves; i++) {
+            leaves[i] = keccak256(abi.encodePacked(seed + i));
+        }
+
+        // Generate the proof
+        (bytes32[] memory proof, bytes32 root) = MerkleGen.gen(leaves, randomLeafIndex);
+
+        emit log_named_bytes32("root", root);
+
+        // Verify the proof
+        assertTrue(Prover.prove(proof, root, leaves[randomLeafIndex]));
+    }
 }

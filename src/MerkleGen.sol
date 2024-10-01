@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {ArrayLib} from "./libraries/ArrayLib.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 /**
  * @notice Library for generating Merkle MultiProofs.
@@ -9,6 +10,7 @@ import {ArrayLib} from "./libraries/ArrayLib.sol";
  */
 library MerkleGen {
     using ArrayLib for *;
+    using Math for uint256;
 
     bool private constant SOURCE_FROM_HASHES = true;
     bool private constant SOURCE_FROM_PROOF = false;
@@ -271,5 +273,135 @@ library MerkleGen {
         }
 
         return (proof_hashes, proof_flag_bits_bool, root);
+    }
+
+    function gen(bytes32[] memory leaves, uint256 leafIndex) internal pure returns (bytes32[] memory, bytes32) {
+        require(leaves.length > 1, "MerkleGen: Leaves should be greater than 1.");
+
+        // Append with the same leaf if odd number of leaves
+        if (leaves.length % 2 == 1) {
+            leaves = leaves.append(leaves[leaves.length - 1]);
+        }
+
+        bytes32[] memory proof = get_proof(leaves, leafIndex);
+        bytes32 root = get_root(leaves);
+
+        return (proof, root);
+    }
+
+    function init_tree(bytes32[] memory leaves) internal pure returns (bytes32[] memory) {
+        require(leaves.length > 1, "MerkleGen: Leaves should be greater than 1.");
+
+        bytes32[] memory tree = new bytes32[](2 * leaves.length - 1);
+
+        uint256 index = tree.length - leaves.length;
+
+        for (uint256 i = 0; i < leaves.length; i++) {
+            tree[index + i] = leaves[i];
+        }
+
+        return tree;
+    }
+
+    function build_tree(bytes32[] memory leaves) internal pure returns (bytes32[] memory) {
+        bytes32[] memory tree = init_tree(leaves);
+
+        for (uint256 i = tree.length - 1; i > 1; i -= 2) {
+            bytes32 left = tree[i - 1];
+            bytes32 right = tree[i];
+            bytes32 parent = hash_internal_nodes(left, right);
+            uint256 parentIndex = (i - 1) / 2;
+            tree[parentIndex] = parent;
+        }
+
+        return tree;
+    }
+
+    function get_root(bytes32[] memory leaves) internal pure returns (bytes32) {
+        require(leaves.length > 1, "MerkleGen: Data should be greater than 1.");
+
+        bytes32[] memory tree = build_tree(leaves);
+
+        return tree[0];
+    }
+
+    function get_proof(bytes32[] memory leaves, uint256 index) internal pure returns (bytes32[] memory) {
+        require(leaves.length > 1, "MerkleGen: Leaves should be greater than 1.");
+
+        bytes32[] memory tree = build_tree(leaves);
+
+        uint256 proofLength = log2ceilBitMagic(leaves.length);
+        bytes32[] memory proof = new bytes32[](proofLength);
+
+        uint256 proofIndex = 0;
+
+        uint256 currentIndex = leaves.length - 1 + index;
+
+        while (currentIndex > 0) {
+            uint256 siblingIndex = (currentIndex % 2 == 0) ? currentIndex - 1 : currentIndex + 1;
+
+            if (siblingIndex < tree.length) {
+                proof[proofIndex] = tree[siblingIndex];
+                proofIndex++;
+            }
+
+            currentIndex = (currentIndex - 1) / 2;
+        }
+
+        bytes32[] memory finalProof = new bytes32[](proofIndex);
+        for (uint256 i = 0; i < proofIndex; i++) {
+            finalProof[i] = proof[i];
+        }
+
+        return finalProof;
+    }
+
+    function log2ceilBitMagic(uint256 x) internal pure returns (uint256) {
+        if (x <= 1) {
+            return 0;
+        }
+
+        uint256 msb = 0;
+        uint256 _x = x;
+
+        if (x >= 2 ** 128) {
+            x >>= 128;
+            msb += 128;
+        }
+        if (x >= 2 ** 64) {
+            x >>= 64;
+            msb += 64;
+        }
+        if (x >= 2 ** 32) {
+            x >>= 32;
+            msb += 32;
+        }
+        if (x >= 2 ** 16) {
+            x >>= 16;
+            msb += 16;
+        }
+        if (x >= 2 ** 8) {
+            x >>= 8;
+            msb += 8;
+        }
+        if (x >= 2 ** 4) {
+            x >>= 4;
+            msb += 4;
+        }
+        if (x >= 2 ** 2) {
+            x >>= 2;
+            msb += 2;
+        }
+        if (x >= 2 ** 1) {
+            msb += 1;
+        }
+
+        uint256 lsb = (~_x + 1) & _x;
+
+        if ((lsb == _x) && (msb > 0)) {
+            return msb;
+        } else {
+            return msb + 1;
+        }
     }
 }
