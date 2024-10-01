@@ -1,36 +1,42 @@
-/*
-A contract for Generating Merkle MultiProof.
-
-Contributors:
-- sonicskye
-
-*/
-
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.0;
 
-import {ArrayLib} from './libraries/ArrayLib.sol';
+import {ArrayLib} from "./libraries/ArrayLib.sol";
 
-contract MerkleGen {
-
+/**
+ * @notice Library for generating Merkle MultiProofs.
+ * @author sonicskye.
+ */
+library MerkleGen {
     using ArrayLib for *;
 
-    bool SOURCE_FROM_HASHES = true;
-    bool SOURCE_FROM_PROOF = false;
+    bool private constant SOURCE_FROM_HASHES = true;
+    bool private constant SOURCE_FROM_PROOF = false;
 
-    function hash_internal_node(bytes32 a, bytes32 b) internal pure returns (bytes32 h) {
+    /**
+     * @notice Hashes two internal nodes to generate their parent node.
+     * @param a First child node.
+     * @param b Second child node.
+     * @return h Hashed parent node.
+     */
+    function hash_internal_nodes(bytes32 a, bytes32 b) internal pure returns (bytes32 h) {
         if (a < b) {
             h = keccak256(abi.encodePacked(a, b));
-        }
-        else {
+        } else {
             h = keccak256(abi.encodePacked(b, a));
         }
     }
 
+    /**
+     * @notice Computes the next layer in the Merkle tree from the current layer.
+     * @dev If the current layer has an odd number of nodes, the last node is duplicated.
+     * @param layer Current layer of the Merkle tree.
+     * @return Computed next layer.
+     */
     function compute_next_layer(bytes32[] memory layer) internal pure returns (bytes32[] memory) {
         if (layer.length == 1) {
             return layer;
-        } 
+        }
 
         if (layer.length % 2 == 1) {
             // Append with the same leaf if odd number of leaves
@@ -38,21 +44,46 @@ contract MerkleGen {
         }
 
         bytes32[] memory next_layer;
+
         for (uint256 i = 0; i < layer.length; i += 2) {
-            next_layer = next_layer.append(hash_internal_node(layer[i], layer[i + 1]));
+            next_layer = next_layer.append(hash_internal_nodes(layer[i], layer[i + 1]));
         }
+
         return next_layer;
     }
 
+    /**
+     * @notice Calculates the parent index for a given node index.
+     * @param index Current node index.
+     * @return Parent node index.
+     */
     function parent_index(uint256 index) internal pure returns (uint256) {
         return index / 2;
     }
 
+    /**
+     * @notice Determines the sibling index of a given node index.
+     * @param index Current node index.
+     * @return Sibling node index.
+     */
     function sibling_index(uint256 index) internal pure returns (uint256) {
         return index ^ 1;
     }
 
-    function prove_single_layer(bytes32[] memory layer, uint256[] memory indices) internal view returns (uint256[] memory, bytes32[] memory, bool[] memory) {
+    /**
+     * @notice Generates the proof components for a single layer in the Merkle tree.
+     * @dev Processes selected indices to extract the necessary sibling hashes and flags.
+     * @param layer Current layer of the Merkle tree.
+     * @param indices Indices of the selected nodes in the current layer.
+     * @return Indices for the next layer.
+     * @return Sibling hashes required for the proof.
+     * @return Flags indicating the source of each proof hash.
+     */
+    function prove_single_layer(bytes32[] memory layer, uint256[] memory indices)
+        internal
+        pure
+        returns (uint256[] memory, bytes32[] memory, bool[] memory)
+    {
         uint256[] memory auth_indices;
         uint256[] memory next_indices;
         bool[] memory source_flags;
@@ -62,11 +93,10 @@ contract MerkleGen {
             uint256 x = indices[j];
             next_indices = next_indices.append(parent_index(x));
 
-            if ( ((j + 1) < indices.length) && (indices[j + 1] == sibling_index(x)) ) {
+            if (((j + 1) < indices.length) && (indices[j + 1] == sibling_index(x))) {
                 j += 1;
                 source_flags = source_flags.append(SOURCE_FROM_HASHES);
-            }
-            else {
+            } else {
                 auth_indices = auth_indices.append(sibling_index(x));
                 source_flags = source_flags.append(SOURCE_FROM_PROOF);
             }
@@ -77,7 +107,7 @@ contract MerkleGen {
         for (uint256 i = 0; i < auth_indices.length; i++) {
             // Here, if the index is out of bounds, we use the last element of the layer
             if (layer.length - 1 < auth_indices[i]) {
-                subProof[i] = layer[auth_indices[i]-1];
+                subProof[i] = layer[auth_indices[i] - 1];
             } else {
                 subProof[i] = layer[auth_indices[i]];
             }
@@ -86,6 +116,12 @@ contract MerkleGen {
         return (next_indices, subProof, source_flags);
     }
 
+    /**
+     * @notice Counts the number of occurrences of a specific flag in an array.
+     * @param flags Array of boolean flags.
+     * @param flag Flag to count.
+     * @return Number of times the flag appears in the array.
+     */
     function helper_count(bool[] memory flags, bool flag) internal pure returns (uint256) {
         uint256 count = 0;
         for (uint256 i = 0; i < flags.length; i++) {
@@ -96,10 +132,27 @@ contract MerkleGen {
         return count;
     }
 
-    function verify_compute_root(bytes32[] memory leaves, bytes32[] memory proof_hashes, bool[] memory proof_source_flags) internal view returns (bytes32) {
+    /**
+     * @notice Verifies and computes the Merkle root from the provided leaves and proof components.
+     * @dev Reconstructs the Merkle root by iteratively hashing pairs based on the source flags.
+     * @dev The total number of hashes must equal the number of source flags plus one.
+     * @dev The number of proof hashes must match the number of `SOURCE_FROM_PROOF` flags.
+     * @param leaves Selected leaves to be included in the proof.
+     * @param proof_hashes Sibling hashes extracted from the proof.
+     * @param proof_source_flags Flags indicating the source of each proof hash.
+     * @return Computed Merkle root.
+     */
+    function verify_compute_root(
+        bytes32[] memory leaves,
+        bytes32[] memory proof_hashes,
+        bool[] memory proof_source_flags
+    ) internal pure returns (bytes32) {
         uint256 total_hashes = leaves.length + proof_hashes.length - 1;
-        require(total_hashes == proof_source_flags.length, "Invalid total hashes");
-        require(helper_count(proof_source_flags, SOURCE_FROM_PROOF) == proof_hashes.length, "Invalid number of proof hashes");
+        require(total_hashes == proof_source_flags.length, "MerkleGen: Invalid total hashes.");
+        require(
+            helper_count(proof_source_flags, SOURCE_FROM_PROOF) == proof_hashes.length,
+            "MerkleGen: Invalid number of proof hashes."
+        );
 
         bytes32[] memory hashes = new bytes32[](total_hashes);
         // Fill hashes with leaves[0]
@@ -120,13 +173,11 @@ contract MerkleGen {
                 if (leaf_pos < leaves.length) {
                     a = leaves[leaf_pos];
                     leaf_pos += 1;
-                }
-                else {
+                } else {
                     a = hashes[hash_pos];
                     hash_pos += 1;
                 }
-            }
-            else if (proof_source_flags[i] == SOURCE_FROM_PROOF) {
+            } else if (proof_source_flags[i] == SOURCE_FROM_PROOF) {
                 a = proof_hashes[proof_pos];
                 proof_pos += 1;
             }
@@ -135,32 +186,43 @@ contract MerkleGen {
             if (leaf_pos < leaves.length) {
                 b = leaves[leaf_pos];
                 leaf_pos += 1;
-            }
-            else {
+            } else {
                 b = hashes[hash_pos];
                 hash_pos += 1;
             }
 
             // Compute hash
-            hashes[i] = hash_internal_node(a, b);
+            hashes[i] = hash_internal_nodes(a, b);
         }
 
         if (total_hashes > 0) {
             return hashes[total_hashes - 1];
-        }
-        else {
+        } else {
             return leaves[0];
         }
-
     }
 
-    function gen(bytes32[] memory hashed_leaves, uint256[] memory selected_indexes) public view returns (bytes32[] memory, bool[] memory, bytes32){
+    /**
+     * @notice Generates a Merkle MultiProof for the selected leaves.
+     * @dev Constructs the necessary proof components and verifies the Merkle root.
+     * @dev The computed root must match the actual root of the Merkle tree.
+     * @param hashed_leaves The array of hashed leaves in the Merkle tree.
+     * @param selected_indexes The indices of the leaves to include in the proof.
+     * @return Sibling hashes required for the proof.
+     * @return Flags indicating the source of each proof hash.
+     * @return Merkle root of the tree.
+     */
+    function gen(bytes32[] memory hashed_leaves, uint256[] memory selected_indexes)
+        public
+        pure
+        returns (bytes32[] memory, bool[] memory, bytes32)
+    {
         bytes32[] memory layer = hashed_leaves.copy();
-        // If odd number of leaves, append with the same leaf
+        // Append with the same leaf if odd number of leaves
         if (layer.length % 2 == 1) {
             layer = layer.append(layer[layer.length - 1]);
         }
-        // Create two dimensional array
+        // Create a two dimensional array
         bytes32[][] memory layers = new bytes32[][](1);
         layers[0] = layer;
         bytes32[] memory next_layer;
@@ -176,7 +238,8 @@ contract MerkleGen {
 
         bytes32[] memory subproof;
         bool[] memory source_flags;
-        for (uint256 i = 0; i < layers.length - 1; i++) { // Exclude the last layer because it is the root
+        for (uint256 i = 0; i < layers.length - 1; i++) {
+            // Exclude the last layer because it's the root
             layer = layers[i];
             (indices, subproof, source_flags) = prove_single_layer(layer, indices);
             proof_hashes = proof_hashes.extend(subproof);
@@ -192,7 +255,7 @@ contract MerkleGen {
         bytes32 root = verify_compute_root(indexed_leaves, proof_hashes, proof_source_flags);
 
         // Check if computed root is the same as the root of the tree
-        require(root == layers[layers.length-1][0], "Invalid root");
+        require(root == layers[layers.length - 1][0], "Invalid root");
 
         // Convert proof_source_flags to bits and uint256
         uint256 proof_flag_bits = 0;
@@ -201,16 +264,12 @@ contract MerkleGen {
             if (proof_source_flags[i] == SOURCE_FROM_HASHES) {
                 proof_flag_bits_bool[i] = true;
                 proof_flag_bits = proof_flag_bits | (1 << i);
-                
-            }
-            else {
+            } else {
                 proof_flag_bits_bool[i] = false;
                 proof_flag_bits = proof_flag_bits | (0 << i);
             }
         }
 
         return (proof_hashes, proof_flag_bits_bool, root);
-
     }
-
 }
