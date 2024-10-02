@@ -17,7 +17,7 @@ library Prover {
      * @param leaves Leaf nodes that are being proved to be part of the Merkle tree.
      * @return A boolean value indicating whether the proof is valid or not.
      */
-    function prove(bytes32[] calldata proof, bool[] calldata flag, bytes32 root, bytes32[] calldata leaves)
+    function proveMultiProof(bytes32[] calldata proof, bool[] calldata flag, bytes32 root, bytes32[] calldata leaves)
         public
         pure
         returns (bool)
@@ -33,7 +33,7 @@ library Prover {
      * @param leaf Leaf node that is being proved to be a part of the Merkle tree.
      * @return A boolean value indicating whether the proof is valid or not.
      */
-    function prove(bytes32[] calldata proof, bytes32 root, bytes32 leaf) public pure returns (bool) {
+    function proveSingleProof(bytes32[] calldata proof, bytes32 root, bytes32 leaf) public pure returns (bool) {
         return MerkleProof.verifyCalldata(proof, root, leaf);
     }
 }
