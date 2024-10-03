@@ -6,6 +6,7 @@ import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProo
 /**
  * @notice Wrapper library for proving Merkle MultiProofs.
  * @author sonicskye.
+ * @author kamuikatsurgi.
  */
 library Prover {
     /**
