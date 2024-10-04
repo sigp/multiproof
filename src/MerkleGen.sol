@@ -347,8 +347,6 @@ library MerkleGen {
      * @return The root hash of the Merkle tree.
      */
     function _getRoot(bytes32[] memory leaves) internal pure returns (bytes32) {
-        require(leaves.length > 1, "MerkleGen: Data should be greater than 1.");
-
         bytes32[] memory tree = _buildTree(leaves);
 
         return tree[0];
@@ -362,8 +360,6 @@ library MerkleGen {
      * @return An array of sibling hashes forming the Merkle proof for the leaf at the specified index.
      */
     function _getProof(bytes32[] memory leaves, uint256 index) internal pure returns (bytes32[] memory) {
-        require(leaves.length > 1, "MerkleGen: Leaves should be greater than 1.");
-
         bytes32[] memory tree = _buildTree(leaves);
 
         uint256 proofLength = _log2CeilBitMagic(leaves.length);

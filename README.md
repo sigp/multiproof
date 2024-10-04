@@ -3,11 +3,11 @@
 
 # Merkle MultiProof and SingleProof Inputs Generation For Forge
 
-This simple library generates Merkle MultiProof and SingleProof inputs for OpenZeppelin's `MerkleProof` library. It is written in Solidity and can be used in the Forge framework. The library has been tested to work with at most 10k arbitrary leaves and arbitrary indices of any size.
+This simple library generates Merkle MultiProof and SingleProof inputs for OpenZeppelin's [`MerkleProof (v5.0.0)`](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/cryptography/MerkleProof.sol) library. It is written in Solidity and can be used in the Forge framework. The library has been tested to work with at most 10k arbitrary leaves and arbitrary indices of any size.
 
 ## Usage
 
-See `MerkleGen.t.sol` for example:
+See [`MerkleGen.t.sol`](./test/MerkleGen.t.sol) for example:
 - Import the `MerkleGen` library.
 - Prepare the leaves and indices.
 - Call `generateMultiproof` to generate the MultiProof or `generateSingleProof` to generate the SingleProof inputs.
