@@ -1,18 +1,22 @@
-# Merkle Multiproof Inputs Generation For Forge
+> [!WARNING]
+> Note that this library has not had a security review yet, is not gas-efficient, and should only be used for testing.
 
-This is a simple library to generate Merkle Multiproof inputs for OpenZeppelin's `MerkleProof` library. It is written in Solidity and can be used in Forge framework. The library has been tested to work with at most 10k of arbitrary leaves and arbitrary indices of any size.
+# Merkle MultiProof and SingleProof Inputs Generation For Forge
 
-Note that this library is not gas-efficient and should be used for testing purposes only.
+This simple library generates Merkle MultiProof and SingleProof inputs for OpenZeppelin's [`MerkleProof (v5.0.0)`](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/cryptography/MerkleProof.sol) library. It is written in Solidity and can be used in the Forge framework. The library has been tested to work with at most 10k arbitrary leaves and arbitrary indices of any size.
 
 ## Usage
 
-See `MerkleGen.t.sol` for a sample. First, deploy `MerkleGen` contract. Then, prepare the leaves and indices. Finally, call `gen()` to generate the necessary inputs.
+See [`MerkleGen.t.sol`](./test/MerkleGen.t.sol) for example:
+- Import the `MerkleGen` library.
+- Prepare the leaves and indices.
+- Call `generateMultiproof` to generate the MultiProof or `generateSingleProof` to generate the SingleProof inputs.
 
-A mock prover contract is provided in `Prover.sol` which forwards all inputs to OpenZeppelin's `MerkleProof.multiProofVerifyCalldata()`.
+A wrapper Prover library is provided in `Prover.sol`, which forwards all the inputs to OpenZeppelin's `MerkleProof` library.
 
 ## How to run tests
 
-The following command will run a normal test and a (pretty long) fuzzing test of 100k runs. To modify the number of runs, change the parameter in `foundry.toml`.
+The following command will run a standard test and a (pretty long) fuzzing test of 100k runs. To modify the number of runs, change the `runs` parameter in `foundry.toml`.
 
 ```
 forge test
